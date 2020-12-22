@@ -1,0 +1,175 @@
+---
+title: "NMR PCA All"
+author: "Emma Bilbrey"
+date: "5/19/2020"
+output: html_document
+---
+
+# Read Data
+
+Input: Columns are Bins (ppm) (n=756), row names are Sample Names, Column 1 is designated Group Label, Rows are Samples (n=193 with no QC and no blank and no different harvest dates and no KG61 (which was the one not weighed properly to be mulitplied))
+
+```{r}
+metababund1<- read.csv("NMRbinnedLoggedmeta051920.csv",
+                    header=TRUE,
+                    as.is=TRUE,
+                    row.names=1,
+                    check.names=FALSE,
+                    na.strings="0")
+
+metababund1[1:5,1:5]
+dim(metababund1)
+```
+
+```{r}
+Label <- as.factor(metababund1$Label)
+```
+
+#PCA
+
+```{r}
+pca = prcomp(metababund1[,2:ncol(metababund1)],
+             center=TRUE,
+             scale=TRUE)
+```
+
+```{r}
+library(ggplot2)
+```
+
+```{r}
+pcaX <- as.data.frame(pca$x)
+```
+
+```{r}
+ggplot(data=pcaX, aes(x=PC1, y=PC2, color=Label, shape=Label, fill=Label)) +
+  geom_point() +
+  scale_color_manual(values=c("#6E4000", "gold1","#B49221")) +
+  scale_fill_manual(values=c("#6E4000", "gold1","#B49221")) +
+  scale_shape_manual(values=c(21,22,24)) +
+  labs(title="NMR PCA",
+       subtitle="All Apple Extracts",
+       color="Apple Category",
+       shape="Apple Category",
+       fill="Apple Category") +
+  xlab(paste0("PC1: ",
+              round(summary(pca)$importance[2,"PC1"]*100, digits=2),
+              "%")) +
+  ylab(paste0("PC2: ",
+              round(summary(pca)$importance[2,"PC2"]*100, digits=2),
+              "%")) +
+  theme_bw() +
+  theme(panel.grid=element_blank())
+```
+
+#PCA for Apples used in mGWAS only
+
+Need to get only the correct 124 apples here. Need to do the ones that are averaged together. used the data frames that I submitted to the OSC for the mGWAS studies. Just took out the 3 columns of metadata and instead added a column for label. labels for each apple were cross referenced with the master apple metadata sheet
+
+### Data Input
+Input: Columns are bins (n=756), row names are Sample Names, Column 1 is designated  Label, Rows are Samples n=124
+
+```{r}
+metababundmGWAS<- read.csv("NMRPCA_mGWASonly121020.csv",
+                    header=TRUE,
+                    as.is=TRUE,
+                    row.names=1,
+                    check.names=FALSE,
+                    strip.white = TRUE,
+                    na.strings="0")
+
+metababundmGWAS[1:5,1:5]
+dim(metababundmGWAS)
+```
+
+```{r}
+mGWASLabel <- as.factor(metababundmGWAS$Label)
+```
+
+```{r}
+pca = prcomp(metababundmGWAS[,2:ncol(metababundmGWAS)],
+             center=TRUE,
+             scale=TRUE)
+```
+
+```{r}
+pcaX <- as.data.frame(pca$x)
+```
+
+```{r}
+ggplot(data=pcaX, aes(x=PC1, y=PC2, color=mGWASLabel, shape=mGWASLabel, fill=mGWASLabel)) +
+  geom_point() +
+  scale_color_manual(values=c("#6E4000", "gold1","#B49221")) +
+  scale_fill_manual(values=c("#6E4000", "gold1","#B49221")) +
+  scale_shape_manual(values=c(21,22,24)) +
+  labs(title="NMR PCA",
+       subtitle="All Apple Extracts",
+       color="Apple Category",
+       shape="Apple Category",
+       fill="Apple Category") +
+  xlab(paste0("PC1: ",
+              round(summary(pca)$importance[2,"PC1"]*100, digits=2),
+              "%")) +
+  ylab(paste0("PC2: ",
+              round(summary(pca)$importance[2,"PC2"]*100, digits=2),
+              "%")) +
+  theme_bw() +
+  theme(panel.grid=element_blank())
+```
+
+# Boxplot
+
+
+
+```{r}
+metababundmGWAS<- read.csv("NMRPCA_mGWASQC122220.csv",
+                    header=TRUE,
+                    as.is=TRUE,
+                    row.names=1,
+                    check.names=FALSE,
+                    strip.white = TRUE,
+                    na.strings="0")
+
+metababundmGWAS[1:5,1:5]
+dim(metababundmGWAS)
+```
+
+```{r}
+# move rownames to a column
+# then change rowname to Genotype
+loglowimputationdiv2QC_rownames <- metababundmGWAS %>%
+  rownames_to_column() %>%
+  rename(Genotype = rowname)
+
+# create tidy data
+# from wide to long
+loglowimputationdiv2QC_rownames_tidy <- loglowimputationdiv2QC_rownames %>% 
+  pivot_longer(cols = `9.45,9.44`:ncol(.),
+               names_to = "Bin",
+               values_to = "Intensity")
+
+# set label as factor so it goes in the order specified below
+loglowimputationdiv2QC_rownames_tidy$Label <- factor(loglowimputationdiv2QC_rownames_tidy$Label,levels = c("Pedigree","Diverse", "Wild", "QC"))
+
+# reordering and factoring data so that Genotype is grouped by Label
+loglowimputationdiv2QC_rownames_tidy <- loglowimputationdiv2QC_rownames_tidy %>%
+  arrange(Label) %>% # sort by label
+  mutate(Genotype = fct_inorder(Genotype)) # set Genotype as a factor in the order we have arranged label
+
+# boxplot
+loglowimputationdiv2QC_rownames_tidy %>%
+  ggplot(aes(x = Genotype, 
+             y = Intensity,
+             fill = Label)) +
+  geom_boxplot(outlier.size = .07, lwd=.1) +
+  expand_limits(x=0, y=0) +
+  scale_y_continuous(trans='log2') +
+  theme(axis.text.x=element_text(angle=90,hjust=1,size=3),
+        panel.background = element_blank(),
+        legend.key=element_blank()) +
+  labs(title = "NMR Log Transformed Metabolite Abundance Data for Each Apple",
+       subtitle = "Low values imputed, sorted by Sample Type",
+       fill = "Sample Type",
+       x = "Genotype",
+       y = "Bin Intensity (log2)")
+```
