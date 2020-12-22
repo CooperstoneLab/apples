@@ -1,0 +1,477 @@
+---
+title: "Apple Pos Data Analysis 051920"
+author: "Emma Bilbrey"
+date: "5/19/2020"
+output:
+  html_document:
+    toc: true
+    toc_depth: 4
+    toc_float: 
+      collapsed: false
+    theme: cerulean
+    highlight: tango
+---
+
+# Data Input
+Input: Columns are Features (m/z@rt) (n=4872), row names are Sample Names, Column 1 is designated Group Label, Rows are Samples (without later harvest date samples (5) and KG61 (weight issue) (n=226 with QCs, n=193 w/o QCs)
+
+```{r}
+metababund1<- read.csv("ApplesPosFiltered4800_111519_051920.csv",
+                    header=TRUE,
+                    as.is=TRUE,
+                    row.names=1,
+                    check.names=FALSE,
+                    strip.white = TRUE,
+                    na.strings="0")
+
+metababund1[1:5,1:5]
+dim(metababund1)
+```
+
+# Dealing with Missing Data
+
+## Making Dataframe with Low Value/2 Imputations
+
+Because PCA needs data with no missing values, we need to impute values somehow. Because the NAs we have are due to the concentration being below the lowest detectable limit of the instrument, we are chosing to impute with the lowest value for each metabolite divided by 2. This means that the imputed value will be different for every metabolite and smaller by half.
+
+```{r}
+lowimputationdiv2QC<-metababund1
+lowimputationdiv2QC[] <- lapply(lowimputationdiv2QC,function(x) ifelse(is.na(x), min(x, na.rm = TRUE)/2, x))
+dim(lowimputationdiv2QC)
+lowimputationdiv2QC[1:5,1:5]
+```
+
+
+#Log2 Transformed Data
+
+Didn't use +1 because there are no values less than 1, which would become negative in a log transformation
+
+par(mfrow(c))
+
+```{r}
+Label <- as.factor(lowimputationdiv2QC$Label)
+loglowimputationdiv2QC<-as.data.frame(cbind(Label,
+                                            log2(lowimputationdiv2QC[,2:ncol(lowimputationdiv2QC)])),
+                                      as.is=T,
+                                      header=T,
+                                      row.names=row.names(lowimputationdiv2QC),
+                                      check.names=F)
+Label <- as.factor(loglowimputationdiv2QC$Label)
+loglowimputationdiv2QC[1:5,1:5]
+```
+
+# PCAs
+
+## PCA for Apple Type with QCs
+
+```{r}
+pca = prcomp(loglowimputationdiv2QC[,2:ncol(loglowimputationdiv2QC)],
+             scale=TRUE,
+             center=TRUE)
+```
+
+```{r}
+#install.packages("plotly")
+```
+
+```{r}
+library(ggplot2)
+library(plotly)
+```
+
+```{r}
+pcaX <- as.data.frame(pca$x)
+```
+
+```{r}
+PCA<- ggplot(data=pcaX, aes(x=PC1, y=PC2, color=Label, shape=Label, fill=Label)) +
+  geom_point() +
+  scale_color_manual(values=c("#002B27","#7EB09B","cyan3", "#C1CFDA")) +
+  scale_shape_manual(values=c(21, 22, 23, 24)) +
+  scale_fill_manual(values=c("#002B27","#7EB09B","cyan3", "#C1CFDA")) +
+  labs(title="LC-MS Positive Mode PCA",
+       subtitle="All Apple Extracts and Pooled Quality Controls",
+       color="Apple Category",
+       shape="Apple Category",
+       fill="Apple Category") +
+  xlab(paste0("PC1: ",
+              round(summary(pca)$importance[2,"PC1"]*100, digits=2),
+              "%")) +
+  ylab(paste0("PC2: ",
+              round(summary(pca)$importance[2,"PC2"]*100, digits=2),
+              "%")) +
+  theme_bw() +
+  theme(panel.grid=element_blank())
+```
+
+```{r}
+ggplotly(PCA)
+```
+
+The clustering of the QCs looks good here!
+in order to see the qcs closer up. make the plot in the console.
+install.packages("TeachingDemos")
+library(zoom)
+and do zm() after making the plot
+
+##PCA for Apples (no Pooled QC)
+
+Remove qcs from data frame
+
+```{r}
+loglowimputationdiv2 <- loglowimputationdiv2QC[which(Label!="QC"),]
+dim(loglowimputationdiv2)
+Label <- loglowimputationdiv2$Label
+```
+
+```{r}
+pca = prcomp(loglowimputationdiv2[,2:ncol(loglowimputationdiv2)],
+             center=TRUE,
+             scale=TRUE)
+```
+
+```{r}
+pcaX <- as.data.frame(pca$x)
+```
+
+```{r}
+PCA<-ggplot(data=pcaX, aes(x=PC1, y=PC2, color=Label, shape=Label, fill=Label)) +
+  geom_point() +
+  scale_color_manual(values=c("#002B27","#7EB09B", "#C1CFDA")) +
+  scale_fill_manual(values=c("#002B27","#7EB09B", "#C1CFDA")) +
+  scale_shape_manual(values=c(21, 22, 24)) +
+  labs(title="LC-MS Positive Mode PCA",
+       subtitle="All Apple Extracts",
+       color="Apple Category",
+       shape="Apple Category",
+       fill="Apple Category") +
+  xlab(paste0("PC1: ",
+              round(summary(pca)$importance[2,"PC1"]*100, digits=2),
+              "%")) +
+  ylab(paste0("PC2: ",
+              round(summary(pca)$importance[2,"PC2"]*100, digits=2),
+              "%")) +
+  theme_bw() +
+  theme(panel.grid=element_blank())
+```
+
+```{r}
+ggplotly(PCA)
+```
+
+##PCA for Apples used in mGWAS only
+
+Need to get only the correct 124 apples here. Need to do the ones that are averaged together. used the data frames that I submitted to the OSC for the mGWAS studies. Just took out the 3 columns of metadata and instead added a column for label. labels for each apple were cross referenced with the master apple metadata sheet
+
+
+
+### Data Input
+Input: Columns are Features (m/z@rt) (n=4872), row names are Sample Names, Column 1 is designated Group Label, Rows are Samples n=124
+
+```{r}
+metababundmGWAS<- read.csv("ApplesPosFiltered4800_111519_051920_120920mGWAS_apples_only.csv",
+                    header=TRUE,
+                    as.is=TRUE,
+                    row.names=1,
+                    check.names=FALSE,
+                    strip.white = TRUE,
+                    na.strings="0")
+
+metababundmGWAS[1:5,1:5]
+dim(metababundmGWAS)
+```
+
+### Dealing with Missing Data
+
+first remove columns with all NA
+
+```{r}
+NAbyColumn<-colSums(is.na(metababundmGWAS))
+metababundmGWAS <-metababundmGWAS[,-which(NAbyColumn==124)]
+dim(metababundmGWAS)
+```
+
+911.445900321102_5.10887183908046 
+                             4824 
+372.685937110958_4.02991992753621 
+                             4838 
+1175.69049453434_7.37639549549556 
+                             4852 
+835.444377432016_3.52763170731704 
+                             4860 
+819.450158391184_4.09662868217053 
+                             4862 
+1173.67593847482_7.37982129629633 
+                             4863 
+
+#### Making Dataframe with Low Value/2 Imputations
+
+Because PCA needs data with no missing values, we need to impute values somehow. Because the NAs we have are due to the concentration being below the lowest detectable limit of the instrument, we are chosing to impute with the lowest value for each metabolite divided by 2. This means that the imputed value will be different for every metabolite and smaller by half.
+
+```{r}
+lowimputationdiv2mGWAS<-metababundmGWAS
+lowimputationdiv2mGWAS[] <- lapply(lowimputationdiv2mGWAS,function(x) ifelse(is.na(x), min(x, na.rm = TRUE)/2, x))
+dim(lowimputationdiv2mGWAS)
+lowimputationdiv2mGWAS[1:5,1:5]
+```
+
+### Log2 Transformed Data
+
+Didn't use +1 because there are no values less than 1, which would become negative in a log transformation
+
+par(mfrow(c))
+
+```{r}
+LabelmGWAS <- as.factor(lowimputationdiv2mGWAS$Label)
+loglowimputationdiv2mGWAS<-as.data.frame(cbind(LabelmGWAS,
+                                            log2(lowimputationdiv2mGWAS[,2:ncol(lowimputationdiv2mGWAS)])),
+                                      as.is=T,
+                                      header=T,
+                                      row.names=row.names(lowimputationdiv2mGWAS),
+                                      check.names=F)
+LabelmGWAS <- as.factor(loglowimputationdiv2mGWAS$LabelmGWAS)
+loglowimputationdiv2mGWAS[1:5,1:5]
+```
+
+```{r}
+pca = prcomp(loglowimputationdiv2mGWAS[,2:ncol(loglowimputationdiv2mGWAS)],
+             center=TRUE,
+             scale=TRUE)
+```
+
+```{r}
+pcaX <- as.data.frame(pca$x)
+```
+
+```{r}
+PCA<-ggplot(data=pcaX, aes(x=PC1, y=PC2, color=LabelmGWAS, shape=LabelmGWAS, fill=LabelmGWAS)) +
+  geom_point() +
+  scale_color_manual(values=c("#002B27","#7EB09B", "#C1CFDA")) +
+  scale_fill_manual(values=c("#002B27","#7EB09B", "#C1CFDA")) +
+  scale_shape_manual(values=c(21, 22, 24)) +
+  labs(title="LC-MS Positive Mode PCA",
+       subtitle="All Apple Extracts",
+       color="Apple Category",
+       shape="Apple Category",
+       fill="Apple Category") +
+  xlab(paste0("PC1: ",
+              round(summary(pca)$importance[2,"PC1"]*100, digits=2),
+              "%")) +
+  ylab(paste0("PC2: ",
+              round(summary(pca)$importance[2,"PC2"]*100, digits=2),
+              "%")) +
+  theme_bw() +
+  theme(panel.grid=element_blank())
+```
+
+also do one with pooled qcs 
+also boxplots for log transforming centering scaling
+
+```{r}
+ggplotly(PCA)
+```
+
+```{r}
+plot(pca$x[,1],pca$x[,2],
+     main="Apple PCA Scores Plot",
+     xlab=paste0("PC1: ",round(summary(pca)$importance[2,"PC1"]*100),"%"),
+     ylab=paste0("PC2: ",round(summary(pca)$importance[2,"PC2"]*100),"%")
+     )
+text(pca$x[,1], pca$x[,2],
+     row.names(loglowimputationdiv2mGWAS),
+     cex=.75
+     )
+```
+
+```{r}
+plot(pca$rotation[,1],pca$rotation[,2],
+     main="PCA Loadings Plot",
+     pch=16,
+     xlab="PC1",
+     ylab="PC2",
+     col="grey")
+```
+
+## PCA for mGWAS only With QCs
+
+Need to get only the correct 124 apples here. Need to do the ones that are averaged together. used the data frames that I submitted to the OSC for the mGWAS studies. Just took out the 3 columns of metadata and instead added a column for label. labels for each apple were cross referenced with the master apple metadata sheet
+
+### Data Input
+Input: Columns are Features (m/z@rt) (n=4872), row names are Sample Names, Column 1 is designated  Label, Rows are Samples n=124 and QCs n=32
+
+```{r}
+metababundmGWAS<- read.csv("ApplesPosFiltered4800_111519_051920_120920mGWAS_apples_onlyQC.csv",
+                    header=TRUE,
+                    as.is=TRUE,
+                    row.names=1,
+                    check.names=FALSE,
+                    strip.white = TRUE,
+                    na.strings="0")
+
+metababundmGWAS[1:5,1:5]
+dim(metababundmGWAS)
+```
+
+#### Making Dataframe with Low Value/2 Imputations
+
+Because PCA needs data with no missing values, we need to impute values somehow. Because the NAs we have are due to the concentration being below the lowest detectable limit of the instrument, we are chosing to impute with the lowest value for each metabolite divided by 2. This means that the imputed value will be different for every metabolite and smaller by half.
+
+```{r}
+lowimputationdiv2mGWAS<-metababundmGWAS
+lowimputationdiv2mGWAS[] <- lapply(lowimputationdiv2mGWAS,function(x) ifelse(is.na(x), min(x, na.rm = TRUE)/2, x))
+dim(lowimputationdiv2mGWAS)
+lowimputationdiv2mGWAS[1:5,1:5]
+```
+
+### Log2 Transformed Data
+
+Didn't use +1 because there are no values less than 1, which would become negative in a log transformation
+
+par(mfrow(c))
+
+```{r}
+LabelmGWAS <- as.factor(lowimputationdiv2mGWAS$Label)
+loglowimputationdiv2mGWAS<-as.data.frame(cbind(LabelmGWAS,
+                                            log2(lowimputationdiv2mGWAS[,2:ncol(lowimputationdiv2mGWAS)])),
+                                      as.is=T,
+                                      header=T,
+                                      row.names=row.names(lowimputationdiv2mGWAS),
+                                      check.names=F)
+LabelmGWAS <- as.factor(loglowimputationdiv2mGWAS$LabelmGWAS)
+loglowimputationdiv2mGWAS[1:5,1:5]
+```
+
+```{r}
+LabelmGWAS <- factor(loglowimputationdiv2mGWAS$LabelmGWAS, levels = c("Diverse", "Pedigree", "Wild", "QC"))
+```
+
+```{r}
+pca = prcomp(loglowimputationdiv2mGWAS[,2:ncol(loglowimputationdiv2mGWAS)],
+             center=TRUE,
+             scale=TRUE)
+```
+
+```{r}
+pcaX <- as.data.frame(pca$x)
+```
+
+```{r}
+ggplot(data=pcaX, aes(x=PC1, y=PC2, color=LabelmGWAS, shape=LabelmGWAS, fill=LabelmGWAS)) +
+  geom_point() +
+  scale_color_manual(values=c("#002B27","#7EB09B", "#C1CFDA","black")) +
+  scale_fill_manual(values=c("#002B27","#7EB09B", "#C1CFDA","black")) +
+  scale_shape_manual(values=c(21,22,24,23)) +
+  labs(title="LC-MS Positive Mode PCA",
+       subtitle="All Apple Extracts and Pooled QCs",
+       color="Apple Category",
+       fill="Apple Category",
+       shape="Apple Category") +
+  xlab(paste0("PC1: ",
+              round(summary(pca)$importance[2,"PC1"]*100, digits=2),
+              "%")) +
+  ylab(paste0("PC2: ",
+              round(summary(pca)$importance[2,"PC2"]*100, digits=2),
+              "%")) +
+  theme_bw() +
+  theme(panel.grid=element_blank())
+```
+
+
+# Boxplots of Samples
+
+### Ordering and boxplotting
+
+Original Data
+
+```{r}
+# move rownames to a column
+# then change rowname to Genotype
+lowimputationdiv2QC_rownames <- lowimputationdiv2mGWAS %>%
+  rownames_to_column() %>%
+  rename(Genotype = rowname)
+
+# create tidy data
+# from wide to long
+lowimputationdiv2QC_rownames_tidy <- lowimputationdiv2QC_rownames %>% 
+  pivot_longer(cols = `235.16921223973_4.92663319209042`:ncol(.),
+               names_to = "MassRT",
+               values_to = "Abundance")
+
+# set label as factor so it goes in the order specified below
+lowimputationdiv2QC_rownames_tidy$Label <- factor(lowimputationdiv2QC_rownames_tidy$Label,
+                                                     levels = c("Pedigree", "Diverse", "Wild", "QC"))
+
+# reordering and factoring data so that Genotype is grouped by Label
+lowimputationdiv2QC_rownames_tidy <- lowimputationdiv2QC_rownames_tidy %>%
+  arrange(Label) %>% # sort by label
+  mutate(Genotype = fct_inorder(Genotype)) # set Genotype as a factor in the order we have arranged label
+
+# boxplot
+lowimputationdiv2QC_rownames_tidy %>%
+  ggplot(aes(x = Genotype, 
+             y = Abundance,
+             fill = Label)) +
+  geom_boxplot() +
+  labs(title = "Raw Metabolite Abundance Data for Each Apple in the mGWAS",
+       subtitle = "Low values imputed, sorted by Label",
+       x = "Genotype",
+       y = "Metabolite Abundance")
+
+lowimputationdiv2QC_rownames_tidy %>%
+  ggplot(aes(x = Genotype, 
+             y = Abundance,
+             fill = Label)) +
+  geom_boxplot(outlier.size = .07, lwd=.1) +
+  expand_limits(x=0, y=0) +
+  theme(axis.text.x=element_text(angle=90,hjust=1,size=3),
+        panel.background = element_blank(),
+        legend.key=element_blank()) +
+  labs(title = "Raw Metabolite Abundance Data for Each Apple in the mGWAS",
+       subtitle = "Low values imputed, sorted by Label",
+       fill = "Sample Type",
+       x = "Genotype",
+       y = "Metabolite Abundance")
+```
+
+Data is low value imputed, and log transformed.
+
+```{r}
+# move rownames to a column
+# then change rowname to Genotype
+loglowimputationdiv2QC_rownames <- loglowimputationdiv2mGWAS %>%
+  rownames_to_column() %>%
+  rename(Genotype = rowname)
+
+# create tidy data
+# from wide to long
+loglowimputationdiv2QC_rownames_tidy <- loglowimputationdiv2QC_rownames %>% 
+  pivot_longer(cols = `235.16921223973_4.92663319209042`:ncol(.),
+               names_to = "MassRT",
+               values_to = "Abundance")
+
+# set label as factor so it goes in the order specified below
+loglowimputationdiv2QC_rownames_tidy$LabelmGWAS <- factor(loglowimputationdiv2QC_rownames_tidy$LabelmGWAS,
+                                                     levels = c("Pedigree", "Diverse", "Wild", "QC"))
+
+# reordering and factoring data so that Genotype is grouped by Label
+loglowimputationdiv2QC_rownames_tidy <- loglowimputationdiv2QC_rownames_tidy %>%
+  arrange(LabelmGWAS) %>% # sort by label
+  mutate(Genotype = fct_inorder(Genotype)) # set Genotype as a factor in the order we have arranged label
+
+# boxplot
+loglowimputationdiv2QC_rownames_tidy %>%
+  ggplot(aes(x = Genotype, 
+             y = Abundance,
+             fill = LabelmGWAS)) +
+  geom_boxplot(outlier.size = .07, lwd=.1) +
+  expand_limits(x=0, y=0) +
+  scale_y_continuous(trans='log2') +
+  theme(axis.text.x=element_text(angle=90,hjust=1,size=3),
+        panel.background = element_blank(),
+        legend.key=element_blank()) +
+  labs(title = "Log Transformed Metabolite Abundance Data for Each Apple",
+       subtitle = "Low values imputed, sorted by Sample Type",
+       fill = "Sample Type",
+       x = "Genotype",
+       y = "Metabolite Abundance (log2)")
+```
