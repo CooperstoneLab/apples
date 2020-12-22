@@ -12,8 +12,3 @@ Code developed combining bash and R to execute multivariate mGWAS via batch scri
 
 ## Prioritization of SNP-Feature Associations
 To reduce the scope of the data to that of most interest, steps were developed to filter SNP-Feature associations to obtain a core set of features with putative metabolite quantitative trait loci (mQTL).
-
-
-
-
-
