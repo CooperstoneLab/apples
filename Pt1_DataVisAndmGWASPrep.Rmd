@@ -3,7 +3,7 @@ title: "Integrating genomics and multi-platform metabolomics enables metabolite 
 author: "Emma Bilbrey"
 date: "2/19/2021"
 output:
-  html_document:
+  github_document:
     toc: true
     toc_depth: 4
     toc_float: 
