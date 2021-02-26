@@ -1,8 +1,12 @@
 # Integrating genomics and multi-platform metabolomics enables metabolite QTL detection in breeding-relevant apple germplasm
-Authors: Emma A Bilbrey, Kathryn Williamson, Emmanuel Hatzakis, Diane Doud Miller, Jonathan Fresnedo Ramiriez, Jessica L Cooperstone.
-https://doi.org/10.1101/2021.02.18.431481
+Paper Authors: Emma A Bilbrey, Kathryn Williamson, Emmanuel Hatzakis, Diane Doud Miller, Jonathan Fresnedo Ramiriez, Jessica L Cooperstone
+
+Preprint available at: https://doi.org/10.1101/2021.02.18.431481
+Under review for publication in *New Phytologist*
 
 # Code Repository
+Code Author: Emma A Bilbrey
+
 Code pertinent to processing untargeted metabolomics data and integrating with SNP array data to see significant associations and visualize results. The code follows a pipeline for integrating genomic data with multiplatform metabolomics data. The code is separated into 3 parts. Part 1 details data processing and visualization for metabolomics and genomics data. Part 2 is a folder of 9 mGWAS batch scripts. Part 3 concerns result processing and visualization from mGWAS and PBA with a concentration on chlorogenic acid, our proof-of-concept metabolite.
 
 Click the .md files for a browsable preview of the code that includes the figures produced.
@@ -15,3 +19,5 @@ Code developed combining bash and R to execute multivariate mGWAS via batch scri
 
 ## Part 3: mGWAS & PBA Results Processing & Visualizations
 To reduce the scope of the data to that of most interest, steps were developed to filter SNP-Feature associations to obtain a core set of features with putative metabolite quantitative trait loci (mQTL). Broad and specific data visualization strategies were developed and are included here: number of mQTL per chromosome bar chart, composite mQTL chromosome map, number of metabolomic features associated with each SNP, mQTL across the NMR spectrum, manhattan plots, and mQTL genotype boxplot.
+
+Feel free to contact with any questions. Data can be found in the supplemental material in the preprint. Raw files for LC-MS (+/-) and 1H NMR data can be found on the MetaboLights repository www.ebi.ac.uk/metabolights/MTBLS2327. Raw LS-MS/MS files can be found in the MassIVE database https://doi.org/doi:10.25345/C5B21P. 
