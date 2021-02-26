@@ -32,61 +32,9 @@ Batch scripts used for mGWAS analyses are also provided in this
 repository as part 2. Part 3 is the code for results processing and
 visualization.
 
-# R Packages
-
-The code format here will install packages if they are not installed
-then bring them into your library. If they are already installed, they
-will simply be loaded into your library.
-
-``` r
-if (!require(BiocManager)) {
-  install.packages("BiocManager")
-  library(BiocManager)
-}
-if (!require(impute)) {
-  install.packages("impute")
-  library(impute)
-}
-if (!require(AGHmatrix)) {
-  install.packages("AGHmatrix")
-  library(AGHmatrix)
-}
-# Functionality
-if (!require(readxl)) {
-  install.packages("readxl")
-  library(readxl)
-}
-if (!require(ggpubr)) {
-  install.packages("ggpubr")
-  library(ggpubr)
-}
-if (!require(tidyverse)) {
-  install.packages("tidyverse")
-  library(tidyverse)
-}
-if (!require(ggplot2)) {
-  install.packages("ggplot2")
-  library(ggplot2)
-}
-if (!require(scales)) {
-  install.packages("scales")
-  library(scales)
-}
-if (!require(DescTools)) {
-  install.packages("DescTools")
-  library(DescTools)
-}
-if (!require(Cairo)) {
-  install.packages("Cairo")
-  library(Cairo)
-}
-if (!require(knitr)) {
-  install.packages("knitr")
-  library(knitr)
-}
-
-head_short <- function(x){x[1:5,1:5]} # this function shows the first 5 rows and columns of an object
-```
+R Packages The code format here will install packages if they are not
+installed then bring them into your library. If they are already
+installed, they will simply be loaded into your library.
 
 # Read in Data
 
@@ -1962,7 +1910,7 @@ Gmat <- Gmatrix(SNPmatrix = as.matrix(SNPs4Gmat),
     ##  Initial:  11165 SNPs 
     ##  Final:  10345  SNPs ( 820  SNPs removed) 
     ##  
-    ## Completed! Time = 4.528  seconds
+    ## Completed! Time = 3.258  seconds
 
 ``` r
 head_short(Gmat)

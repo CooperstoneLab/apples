@@ -1,20 +1,15 @@
 ---
 title: "Integrating genomics and multi-platform metabolomics enables metabolite QTL detection in breeding-relevant apple germplasm"
 author: "Emma Bilbrey"
-date: "2/19/2021"
+date: "2/25/2021"
 output:
   github_document:
     toc: true
     toc_depth: 4
-    toc_float: 
-      collapsed: false
-    theme: cerulean
-    highlight: tango
-    code_download: true
 ---
 
 **Publication Authors:**
-Bilbrey, Emma A, Wiliamson, Kathryn, Hatzakis, Emmanuel, Doud Miller, Diane, Fresnedo-Ramirez, Jonathan, Cooperstone, Jessica L.
+Emma A Bilbrey, Kathryn Wiliamson, Emmanuel Hatzakis, Diane Doud Miller, Jonathan Fresnedo-Ramirez, Jessica L. Cooperstone
 
 To understand genotype-phytochemical associations in apple fruit, we have developed a high-throughput integration strategy for genomic and multi-platform metabolomics data.
 
@@ -22,12 +17,12 @@ To understand genotype-phytochemical associations in apple fruit, we have develo
 
 Code in this markdown represents the first third of the work for our publication. This third is dedicated to data visualization and prep for mGWAS analyses. Data inputs can be found in the supplemental material for the publication. Certain outputs from this section are then used in the batch scripts for conducting mGWAS analyses.
 
-Batch scripts used for mGWAS analyses are also provided in this repository, as well as code for results processing and visualization.
+Batch scripts used for mGWAS analyses are also provided in this repository as part 2. Part 3 is the code for results processing and visualization.
 
-# R Packages
+R Packages
 The code format here will install packages if they are not installed then bring them into your library. If they are already installed, they will simply be loaded into your library.
 
-```{r, message=FALSE}
+```{r, echo=FALSE, message=FALSE}
 if (!require(BiocManager)) {
   install.packages("BiocManager")
   library(BiocManager)
@@ -1377,7 +1372,7 @@ LGLevelsDiverse <- unique(LGDiverse) # make a vector with each of the levels of 
 
 Create a loop to write a .csv file of SNP data divided by chromosome (linkage group)
 
-```{r}
+```{r eval=FALSE}
 for (i in LGLevelsDiverse) { # for every item in the vector of the levels of Linkage Group
   write.csv(SNPDataDiverse[which(LGDiverse==i),], # write a .csv file where rows are subsetted by LG
             file=paste0("DiverseChr", i, ".csv"), # name the file with the specific LG number
@@ -1395,7 +1390,7 @@ LGLevelsPedigree <- unique(LGPedigree) # make a vector with each of the levels o
 
 Create a loop to write a .csv file of SNP data divided by chromosome (linkage group)
 
-```{r}
+```{r eval=FALSE}
 for (i in LGLevelsPedigree) { # for every item in the vector of the levels of Linkage Group
   write.csv(SNPDataPedigree[which(LGPedigree==i),], # write a .csv file where rows are subsetted by LG
             file=paste0("PedigreeChr", i, ".csv"), # name the file with the specific LG number
@@ -1413,7 +1408,7 @@ LGLevelsProgeny <- unique(LGProgeny) # make a vector with each of the levels of 
 
 Create a loop to write a .csv file of SNP data divided by chromosome (linkage group)
 
-```{r}
+```{r eval=FALSE}
 for (i in LGLevelsProgeny) { # for every item in the vector of the levels of Linkage Group
   write.csv(SNPDataProgeny[which(LGProgeny==i),], # write a .csv file where rows are subsetted by LG
             file=paste0("ProgenyChr", i, ".csv"), # name the file with the specific LG number
